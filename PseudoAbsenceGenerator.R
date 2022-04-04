@@ -24,8 +24,9 @@ t0<-Sys.time()
 ## parameters 
 species<-"Latimeria chalumnae"
 #boundingbox="POLYGON((-180 -90,-180 90,180 90,180 -90,-180 -90))"
-boundingbox="POLYGON((34.94 -27.53,34.94 -9.19,53.71 -9.19,53.71 -27.53,34.94 -27.53))"
-resolution = 0.001#0.1
+boundingbox<-"POLYGON((34.94 -27.53,34.94 -9.19,53.71 -9.19,53.71 -27.53,34.94 -27.53))"
+resolution<-1
+#0.001|0.01|0.1|1
 
 cat("Selected species:",species,"\nresolution:",resolution,"\nbounding box: ",boundingbox,"\n")
 
@@ -38,6 +39,11 @@ if (file.exists(occurrences_file)){
 }
 
 speciesid<-occurrences$speciesid[1]
+if (is.null(speciesid)){
+  cat("No species found on OBIS with name ->",species,"<- in the selected area. Please, check the name or change the area!\n")
+  stopscript
+}
+
 cat("Spp occurrences retrieved for sp id",speciesid,"\n")
 
 ndigits = 0
@@ -51,8 +57,19 @@ if (resolution==0.1)
 cat("Selecting valuable datasets\n")
 resources_records<-sqldf("select count(*) counts, dataset_id from occurrences group by dataset_id",drv="SQLite")
 resources_records$counts<-resources_records$counts/sum(resources_records$counts)
-lowerlim<-mean(resources_records$counts)+sd(resources_records$counts)
-valid_datasets<-resources_records[which(resources_records$counts>lowerlim),]$dataset_id
+lowerlim<-mean(resources_records$counts)+1.96*sd(resources_records$counts)
+valid_datasets<-resources_records[which(resources_records$counts>=lowerlim),]$dataset_id
+if (length(valid_datasets)==0){
+  cat("Revising lower limit\n")
+  lowerlim<-max(resources_records$counts)
+  valid_datasets<-resources_records[which(resources_records$counts>=lowerlim),]$dataset_id
+}  
+
+if (length(valid_datasets)==0){
+  cat("No valid data found in the bounding box. Please try extending it!\n")
+  stopscript
+}
+
 valid_datasets<-as.vector(valid_datasets)
 cat("\nValid datasets found",length(valid_datasets)," over ",length(unique(resources_records$dataset_id)),"\n")
 
@@ -81,11 +98,16 @@ alloccurrences_coords$decimalLatitude<-round(alloccurrences_coords$decimalLatitu
 alloccurrences_coords<-unique(alloccurrences_coords)
 cat("The datasets contain",dim(alloccurrences_coords)[1],"records for other species\n")
 
+if (dim(alloccurrences_coords)[1]==0){
+  cat("No other species was observed without observing also ",species,". The algorithm cannot work with the current bounding box. Please try extending it or change the resolution!\n")
+  stopscript
+}
+
 cat("Overlapping the datasets\n")
 speciesoverlap<-sqldf("select a.decimalLongitude,b.decimalLatitude from occurrences_valid as a join alloccurrences_coords as b on a.decimalLongitude=b.decimalLongitude AND a.decimalLatitude=b.decimalLatitude",drv="SQLite")
 speciespresence<-rbind(speciesoverlap,occurrences_valid)
 speciespresence<-unique(speciespresence)
-cat("There were",dim(speciespresence)[1],"overlapping locations\n")
+cat("There were",dim(speciespresence)[1],"overlapping or presence locations\n")
 
 alloccurrence_codes<-paste(alloccurrences_coords$decimalLongitude,";",alloccurrences_coords$decimalLatitude,sep="")
 allpresence_codes<-paste(speciespresence$decimalLongitude,";",speciespresence$decimalLatitude,sep="")
@@ -93,6 +115,11 @@ allpresence_codes<-paste(speciespresence$decimalLongitude,";",speciespresence$de
 absences<-alloccurrences_coords[-which(alloccurrence_codes %in% allpresence_codes),]
 absences<-unique(absences)
 cat("There were",dim(absences)[1],"non-overlapping locations->absences\n")
+
+if (dim(absences)[1]==0){
+  cat("No other species was observed without observing also ",species,". The algorithm cannot work with the current bounding box. Please try extending it or change the resolution!\n")
+  stopscript
+}
 
 outputimage<-"absence_map.png"
 outputfile<-"absence_points.csv"
@@ -120,6 +147,3 @@ write.table(absPoints,file=outputfile,append=T,row.names=F,quote=F,col.names=F,s
 graphics.off()
 cat("File written\n")
 cat("All done.")
-
-
-
