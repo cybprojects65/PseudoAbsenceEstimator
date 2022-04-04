@@ -1,5 +1,5 @@
-# PseudoAbsenceEstimator
-Pseudo absence estimator for marine based on OBIS data statistical and spatial analysis.
+# Pseudo Absence Location Estimator
+Pseudo absence estimator for marine based on a spatial statistical analysis over OBIS data.
 
 The approach is described in 
 
