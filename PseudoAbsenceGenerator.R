@@ -18,8 +18,6 @@ library(RJSONIO)
 library(httr)
 library(data.table)
 library(robis)
-# time
-t0<-Sys.time()
 
 ## parameters 
 species<-"Latimeria chalumnae"
@@ -27,6 +25,8 @@ species<-"Latimeria chalumnae"
 boundingbox<-"POLYGON((34.94 -27.53,34.94 -9.19,53.71 -9.19,53.71 -27.53,34.94 -27.53))"
 resolution<-1
 #0.001|0.01|0.1|1
+yearStart<-0
+yearEnd<-0
 
 cat("Selected species:",species,"\nresolution:",resolution,"\nbounding box: ",boundingbox,"\n")
 
@@ -45,6 +45,15 @@ if (is.null(speciesid)){
 }
 
 cat("Spp occurrences retrieved for sp id",speciesid,"\n")
+
+if (yearStart>0){
+  occurrencesOrig<-occurrences
+  occurrences<-occurrences[which(occurrences$year>=yearStart),]
+} else if (yearEnd>0){
+  occurrencesOrig<-occurrences
+  occurrences<-occurrences[which(occurrences$year<=yearEnd),]
+}
+
 
 ndigits = 0
 if (resolution==0.001)
@@ -66,7 +75,7 @@ if (length(valid_datasets)==0){
 }  
 
 if (length(valid_datasets)==0){
-  cat("No valid data found in the bounding box. Please try extending it!\n")
+  cat("No valid data found in the bounding box and time frame. Please try extending it!\n")
   stopscript
 }
 
@@ -90,6 +99,14 @@ if (file.exists(alloccurrences_file)){
   save(alloccurrences,file=alloccurrences_file)
 }
 
+if (yearStart>0){
+  alloccurrencesOrig<-alloccurrences
+  alloccurrences<-alloccurrences[which(alloccurrences$year>=yearStart),]
+} else if (yearEnd>0){
+  alloccurrencesOrig<-alloccurrences
+  alloccurrences<-alloccurrences[which(alloccurrences$year<=yearEnd),]
+}
+
 cat("Occurrences retrieved\n")
 alloccurrences_coords<-alloccurrences[-which(alloccurrences$speciesid==speciesid),]
 alloccurrences_coords<-sqldf("select decimalLongitude, decimalLatitude from alloccurrences_coords",drv="SQLite")
@@ -99,7 +116,7 @@ alloccurrences_coords<-unique(alloccurrences_coords)
 cat("The datasets contain",dim(alloccurrences_coords)[1],"records for other species\n")
 
 if (dim(alloccurrences_coords)[1]==0){
-  cat("No other species was observed without observing also ",species,". The algorithm cannot work with the current bounding box. Please try extending it or change the resolution!\n")
+  cat("No other species was observed without observing also ",species,". The algorithm cannot work with the current bounding box and time frame. Please try extending it or change the resolution!\n")
   stopscript
 }
 
@@ -117,7 +134,7 @@ absences<-unique(absences)
 cat("There were",dim(absences)[1],"non-overlapping locations->absences\n")
 
 if (dim(absences)[1]==0){
-  cat("No other species was observed without observing also ",species,". The algorithm cannot work with the current bounding box. Please try extending it or change the resolution!\n")
+  cat("No other species was observed without observing also ",species,". The algorithm cannot work with the current bounding box and time frame. Please try extending it or change the resolution!\n")
   stopscript
 }
 
