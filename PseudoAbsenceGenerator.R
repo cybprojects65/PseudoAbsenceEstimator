@@ -29,9 +29,12 @@ yearStart<-0
 yearEnd<-0
 
 #enable/disable absence retrieval
-presence_only<-F
+false<-F
+true<-T
+presence_only<-false
 
 cat("Selected species:",species,"\nresolution:",resolution,"\nbounding box: ",boundingbox,"\n")
+cat("Generate only presence records:",presence_only,"\n")
 
 occurrences_file<-paste0("occ_",species,"_.dat")
 if (file.exists(occurrences_file)){
@@ -160,46 +163,46 @@ if (presence_only==T){
   }
 }#end management of absence records
 
-  point_distribution<-"presence_absence_map.png"
-  absence_point_table<-"absence_points.csv"
-  
-  cat("Writing image\n")
-  
-  data(wrld_simpl)
-  projection(wrld_simpl) <- CRS("+proj=longlat")
-  png(filename=point_distribution, width=1200, height=600)
-  
-  if (presence_only==F){
-    plot(wrld_simpl, xlim=c(min(absences$decimalLongitude,min(presencepts$longAbs))-1, max(absences$decimalLongitude,presencepts$longAbs)+1), 
-         ylim=c(min(absences$decimalLatitude,presencepts$latAbs)-1, max(absences$decimalLatitude,presencepts$latAbs)+1), axes=TRUE, col="black")
-    box()
-    absPoints <- cbind(absences$decimalLongitude, absences$decimalLatitude)
-    pts <- SpatialPoints(absPoints,proj4string=CRS(proj4string(wrld_simpl)))
-    cat("Excluding absence points that do not fall on land\n")
-    pts<-pts[which(is.na(over(pts, wrld_simpl)$FIPS))]
-    points(pts, col="red", pch=1, cex=0.50)
-    datapts<-as.data.frame(pts)
-    colnames(datapts) <- c("longAbs","latAbs")
-    header<-"longitude,latitude"
-    write.table(header,file=absence_point_table,append=F,row.names=F,quote=F,col.names=F)
-    write.table(absPoints,file=absence_point_table,append=T,row.names=F,quote=F,col.names=F,sep=",")
-  }else{
-    plot(wrld_simpl, xlim=c(min(presencepts$longAbs)-1, max(presencepts$longAbs)+1), 
-         ylim=c(min(presencepts$latAbs)-1, max(presencepts$latAbs)+1), axes=TRUE, col="black")
-    box()
-    file.create(absence_point_table)
-  }
-  
-  presPoints <- cbind(presencepts$longAbs, presencepts$latAbs)
-  ppts <- SpatialPoints(presPoints,proj4string=CRS(proj4string(wrld_simpl)))
-  cat("Excluding presence points that do not fall on land\n")
-  ppts<-ppts[which(is.na(over(ppts, wrld_simpl)$FIPS))]
-  points(ppts, col="blue", pch=1, cex=0.50)
-  
-  cat("Image written\n")
-  
-  graphics.off()
-  cat("File written\n")
+point_distribution<-"presence_absence_map.png"
+absence_point_table<-"absence_points.csv"
+
+cat("Writing image\n")
+
+data(wrld_simpl)
+projection(wrld_simpl) <- CRS("+proj=longlat")
+png(filename=point_distribution, width=1200, height=600)
+
+if (presence_only==F){
+  plot(wrld_simpl, xlim=c(min(absences$decimalLongitude,min(presencepts$longAbs))-1, max(absences$decimalLongitude,presencepts$longAbs)+1), 
+       ylim=c(min(absences$decimalLatitude,presencepts$latAbs)-1, max(absences$decimalLatitude,presencepts$latAbs)+1), axes=TRUE, col="black")
+  box()
+  absPoints <- cbind(absences$decimalLongitude, absences$decimalLatitude)
+  pts <- SpatialPoints(absPoints,proj4string=CRS(proj4string(wrld_simpl)))
+  cat("Excluding absence points that do not fall on land\n")
+  pts<-pts[which(is.na(over(pts, wrld_simpl)$FIPS))]
+  points(pts, col="red", pch=1, cex=0.50)
+  datapts<-as.data.frame(pts)
+  colnames(datapts) <- c("longAbs","latAbs")
+  header<-"longitude,latitude"
+  write.table(header,file=absence_point_table,append=F,row.names=F,quote=F,col.names=F)
+  write.table(absPoints,file=absence_point_table,append=T,row.names=F,quote=F,col.names=F,sep=",")
+}else{
+  plot(wrld_simpl, xlim=c(min(presencepts$longAbs)-1, max(presencepts$longAbs)+1), 
+       ylim=c(min(presencepts$latAbs)-1, max(presencepts$latAbs)+1), axes=TRUE, col="black")
+  box()
+  file.create(absence_point_table)
+}
+
+presPoints <- cbind(presencepts$longAbs, presencepts$latAbs)
+ppts <- SpatialPoints(presPoints,proj4string=CRS(proj4string(wrld_simpl)))
+cat("Excluding presence points that do not fall on land\n")
+ppts<-ppts[which(is.na(over(ppts, wrld_simpl)$FIPS))]
+points(ppts, col="blue", pch=1, cex=0.50)
+
+cat("Image written\n")
+
+graphics.off()
+cat("File written\n")
 
 
 cat("All done.")
