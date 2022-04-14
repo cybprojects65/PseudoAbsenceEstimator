@@ -10,5 +10,5 @@ A running web interface is available on the D4Science e-Infrastructure after fre
 **https://services.d4science.org/group/rprototypinglab/data-miner?OperatorId=org.gcube.dataanalysis.wps.statisticalmanager.synchserver.mappedclasses.transducerers.PSEUDO_ABSENCE_GENERATOR_OBIS**
 
 Example of output image for Latimeria chalumnae around Mozambique at 1 degree resolution:
-![Example of output image](https://github.com/cybprojects65/PseudoAbsenceEstimator/raw/main/absence_map.png)
+![Example of output image](https://github.com/cybprojects65/PseudoAbsenceEstimator/raw/main/presence_absence_map.png)
 
