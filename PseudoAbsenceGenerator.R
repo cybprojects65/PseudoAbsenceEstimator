@@ -28,6 +28,9 @@ resolution<-1
 yearStart<-0
 yearEnd<-0
 
+#enable/disable absence retrieval
+occurrences_only<-F
+
 cat("Selected species:",species,"\nresolution:",resolution,"\nbounding box: ",boundingbox,"\n")
 
 occurrences_file<-paste0("occ_",species,"_.dat")
@@ -54,7 +57,6 @@ if (yearStart>0){
   occurrences<-occurrences[which(occurrences$year<=yearEnd),]
 }
 
-
 ndigits = 0
 if (resolution==0.001)
   ndigits = 3
@@ -62,6 +64,25 @@ if (resolution==0.01)
   ndigits = 2
 if (resolution==0.1)
   ndigits = 1
+
+occurrencefile=paste0("occurrence_records.csv")
+write.table(occurrences,file=occurrencefile,append=F,row.names=F,quote=F,col.names=T,sep=",")
+
+outputfilepp<-"presence_points.csv"
+presencepts<-cbind(occurrences$decimalLongitude,occurrences$decimalLatitude)
+presencepts<-as.data.frame(presencepts)
+colnames(presencepts) <- c("longAbs","latAbs")
+presencepts$longAbs<-round(presencepts$longAbs,ndigits)
+presencepts$latAbs<-round(presencepts$latAbs,ndigits)
+presencepts<-unique(presencepts)
+
+header<-"longitude,latitude"
+write.table(header,file=outputfilepp,append=F,row.names=F,quote=F,col.names=F)
+write.table(presencepts,file=outputfilepp,append=T,row.names=F,quote=F,col.names=F,sep=",")
+
+if (occurrences_only==T){
+ cat("Request to produce occurrence records only\n") 
+}else{
 
 cat("Selecting valuable datasets\n")
 resources_records<-sqldf("select count(*) counts, dataset_id from occurrences group by dataset_id",drv="SQLite")
@@ -151,16 +172,25 @@ plot(wrld_simpl, xlim=c(min(absences$decimalLongitude)-1, max(absences$decimalLo
 box()
 absPoints <- cbind(absences$decimalLongitude, absences$decimalLatitude)
 pts <- SpatialPoints(absPoints,proj4string=CRS(proj4string(wrld_simpl)))
-cat("Excluding the points that do not fall on land\n")
+cat("Excluding absence points that do not fall on land\n")
 pts<-pts[which(is.na(over(pts, wrld_simpl)$FIPS))]
-points(pts, col="green", pch=1, cex=0.50)
-cat("Image written\n")
+points(pts, col="red", pch=1, cex=0.50)
 
+presPoints <- cbind(presencepts$longAbs, presencepts$latAbs)
+ppts <- SpatialPoints(presPoints,proj4string=CRS(proj4string(wrld_simpl)))
+cat("Excluding presence points that do not fall on land\n")
+ppts<-ppts[which(is.na(over(ppts, wrld_simpl)$FIPS))]
+points(ppts, col="blue", pch=1, cex=0.50)
+
+cat("Image written\n")
 datapts<-as.data.frame(pts)
 colnames(datapts) <- c("longAbs","latAbs")
 header<-"longitude,latitude"
 write.table(header,file=outputfile,append=F,row.names=F,quote=F,col.names=F)
 write.table(absPoints,file=outputfile,append=T,row.names=F,quote=F,col.names=F,sep=",")
+
 graphics.off()
 cat("File written\n")
+}#end management of absence records
+
 cat("All done.")
