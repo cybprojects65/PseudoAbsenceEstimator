@@ -147,6 +147,9 @@ if (presence_only==T){
   cat("Overlapping the datasets\n")
   speciesoverlap<-sqldf("select a.decimalLongitude,b.decimalLatitude from occurrences_valid as a join alloccurrences_coords as b on a.decimalLongitude=b.decimalLongitude AND a.decimalLatitude=b.decimalLatitude",drv="SQLite")
   speciespresence<-rbind(speciesoverlap,occurrences_valid)
+  presenceptsB<-presencepts
+  colnames(presenceptsB) <- c("decimalLongitude","decimalLatitude")
+  speciespresence<-rbind(speciespresence,presenceptsB)
   speciespresence<-unique(speciespresence)
   cat("There were",dim(speciespresence)[1],"overlapping or presence locations\n")
   
